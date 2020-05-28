@@ -35,7 +35,7 @@
 \threelinestitle
 %\fourlinestitle
 
-\subtitle{Comment toxicity classification using ???}
+\subtitle{Toxicity classification in newspaper comments and tweets}
 \company{Ifrågasätt Media AB}
 \supervisors{Gustav Hjärn, \href{mailto:gustav@ifragasatt.se}{\texttt{gustav@ifragasatt.se}}}{Pierre Nugues, \href{mailto:pierre.nugues@cs.lth.se}{\texttt{pierre.nugues@cs.lth.se}}}
 %\supervisor{John Deer, \href{mailto:jdeer@company.com}{\texttt{jdeer@company.com}}}
@@ -45,14 +45,14 @@
 %\date{January 16, 2015}
 
 \acknowledgements{
-I haven't done anything so thanking someone seems unnecessary.
+I want to thank my supervisor Pierre Nugues for all the help and ideas I received during the making of the thesis. Making this thesis would also not be possible without the resources from Ifrågasätt Media AB in the form of a dataset, access to AWS and help with many other smaller issues from Gustav Hjärn, Henrik Fogelberg and several other people working at Ifrågasätt.
 }
 
 \theabstract{
-The goal of this thesis is to explore the possibility for cross-lingual comment toxicity classification with a focus on newspaper comments. For this purpose, I used a dataset from Ifrågasätt Media AB to investigate if these comments are different in nature to other types of texts online. For the evaluation of the cross-lingual task, I used the OffensEval 2020 dataset. The results are that while zero-shot toxicity classification is possible, even small amounts of data in the target language augmented with more data from another language achieves results similar to having all the data in the target language.\marginpar{This sentence is too long. Please split it. It is not completely clear either} However, due to the differences in annotation standards and language in the Ifrågasätt Media AB dataset and the OffensEval 2020 dataset, they are not useful to combine in cross-lingual training. This problem is potentially made larger due to unclear moderation guidelines or missing context in the Ifrågasätt Media AB dataset.
+The goal of this thesis is to explore the possibility for cross-lingual comment toxicity classification with a focus on newspaper comments. For this purpose, I used a dataset from Ifrågasätt Media AB to investigate if these comments are different in nature to other types of texts online. For the evaluation of the cross-lingual task, I used the OffensEval 2020 dataset. The results are that zero-shot toxicity classification is possible but performs poorly. However, adding a small amounts of data in the target language achieves results similar to having all the data in the target language. However, due to the differences in annotation standards and language in the Ifrågasätt Media AB dataset and the OffensEval 2020 dataset, they are not useful to combine in cross-lingual training. This problem is potentially made larger due to unclear moderation guidelines or missing context in the Ifrågasätt Media AB dataset.
 }
 
-\keywords{MSc, BSc, template, report, style, structure\marginpar{Please give some keywords}}
+\keywords{Natural language processing, Machine learning, Toxicity, Offensive text classification}
 
 %% Only used to display font sizes
 \makeatletter
@@ -68,7 +68,7 @@ The goal of this thesis is to explore the possibility for cross-lingual comment 
 \section{Background}
 As the usage of the internet continues to grow, so does the discussion between individuals on it. People in a wide variety of forums talk to each other and interact with more ease and in different ways than before. In some ways this is positive: More people interacting and discussing things can lead to constructive dialogue. Some social media are almost entirely centered around comments with them filling an essential role for sites such as Facebook or even being almost the entire platform in the case of Twitter. 
 
-However, these conversations often turn into vile attacks and nonconstructive discussion. To prevent the platforms being swamped with poor comments, many platforms decide to moderate these discussions. \marginpar{I would suggest: The platforms decided to moderate these discussions to avoid being swamped with poor comments} Due to the enormous amounts of data, it is not practically possible for people to manually check if all the content on these platforms is acceptable. To automate checking, we can apply text classification techniques. These techniques are not perfect however, and we need first to evaluate if it is possible to identify toxic text reliably. Recent public evaluations have tried to tackle this problem. The OffensEval 2019 competition is an example of them that was based on Twitter data \citep{zampieri2019semeval}.
+However, these conversations often turn into vile attacks and nonconstructive discussion. To prevent their platform from being swamped with poor comments, many decided to moderate these discussions. Due to the enormous amounts of data, it is not practically possible for people to manually check if all the content on these platforms is acceptable. To automate checking, we can apply text classification techniques. These techniques are not perfect however, and we need first to evaluate if it is possible to identify toxic text reliably. Recent public evaluations have tried to tackle this problem. The OffensEval 2019 competition is an example of them that was based on Twitter data \citep{zampieri2019semeval}.
 
 More traditional media have also tried to embrace comments on their platforms with the potential of increasing user engagement and adding value to the information being reported. However, emerging toxic comments on the platforms clash with the newspapers duty to prepare well-researched and informative texts. While not the editorial responsibility of the newspaper, a comment under an article  affects every reader's perception of this article. 
 
@@ -77,13 +77,13 @@ This means that comments on newspapers sites have different requirements to prov
 
 Ifrågasätt Media AB tries to solve these problems by providing a centralized platform for newspapers. A few employees work to provide moderation during all times of the day, making it easier for individual newspapers to start having comment fields without facing large upfront costs of moderating a comment field. To do this, Ifrågasätt uses a partially automated process:
 \begin{enumerate}
-    \item The platform published immediately all the comments;
-    \item  Moderators eventually look at them, but prioritize those flagged by an automated system.
+    \item The platform immediately publishes all the comments;
+    \item  Moderators eventually look at all the comments, but prioritize those flagged by an automated system.
 \end{enumerate}
 
-The automated system assumes all comments are in Swedish and is only capable of rating those that are in ``correct'' Swedish.\marginpar{You can also wrote precise} Up until recently, this has not been a problem as all publications have been in Swedish. However, this prevents Ifrågasätt from effectively operating in countries other than Sweden. 
+The automated system assumes all comments are in Swedish and is only capable of meaningfully giving a rating those that are wholly in Swedish. Up until recently, this has not been a problem as all publications have been in Swedish. However, this prevents Ifrågasätt from effectively operating in countries other than Sweden. 
 
-The objecteive of this Master's thesis is to explore the potential of moderating comments in other language and if it is possible to expand the automated moderating system to other languages.
+The objective of this Master's thesis is to explore the potential of moderating comments in other language and if it is possible to expand the automated moderating system to other languages.
 
 
 \chapter{Theory}
@@ -111,16 +111,19 @@ How these features are learned and combined is what differs between most algorit
 
 Term Frequency--Inverse Document Frequency, from now on TF-IDF, dates back to 1972 as a method of information retrieval \cite{jones1972statistical}. It is a type of feature that is still used today mostly due to the surprising efficiency of this approach combined with the simplicity to implement it.
 
-\marginpar{Here you should write that a text is represented by a vector (bag of word) and the coordinates are the tfidf weights}
+The method starts as a bag-of-words approach. Every document is represented by a vector. The vector is as long the amount of unique words in the corpus or set as a hyperparameter. Every position in this vector represents the occurence of a specific word in the corpus. If a word is present in the vector, the position for that word is set to one. If it is not, the value is set to zero. These positions in the vector are not ordered in any specific way. Usually it is simply the order in which the words were encountered during training.
 
-Every word is weighted by its inverse frequency according to Equation \ref{ekv:tf-idf}. $t$ is a term present in a corpus $D$ and $D_t$ means a document containing  term $t$. This formula ensures that common words prevalent in many documents are granted low scores.
+For most documents, this means a large and sparse vector where most values are zero and a few are equal to one since most of the words in corpus are unlikely to be in each document. If instead of simply putting the values to zeroes or one but actually counting the number of appearances of each word in the vector we have arrived at a term frequency approach.
+
+\marginpar{ I should put a picture explaining bag-of-words here}
+
+ To achieve the inverse document frequency part of the features, every word is weighted by its inverse frequency according to Equation \ref{ekv:tf-idf}. $t$ is a term present in a corpus $D$ and $D_t$ means a document containing  term $t$. This formula ensures that common words prevalent in many documents are granted low scores and that low frequency words that might be more informative are granted higher scores. Putting together the word-of-bag, term frequency and inverse document frequency approaches, each document is represented by a large sparse vector where the coordinates are TF-IDF weights of the document.
 
 \begin{equation}
     IDF(t, D) = \log{\frac{|D|}{|D_t|}}
     \label{ekv:tf-idf}
 \end{equation}
 
-But the purpose of the algorithm is to give every document a score and not every word. To accomplish this, for every document a vector with one value for every term in the corpus is created and for every unique term in the document the frequency of that term is multiplied by the IDF score. Now all documents are represented by a sparse vector that can be used to train a machine learning classifier.\marginpar{I do not understand this paragraph. Please rephrase it. May be you should have it before IDF. You also need to define TF}
 
  The biggest downside of this approach is that the context of the words is lost.  The order of words can drastically change the meaning of a sentence and is often crucial to figure out if a comment is toxic or not. The TF-IDF approach however has no way to model the structure of the sequence that gets scored and this type of understanding of human language is completely left out of the method.
 
@@ -137,7 +140,7 @@ But the purpose of the algorithm is to give every document a score and not every
     \item An update gate decides which part of the hidden state to update and how based on the input.
 \end{itemize}
 
-Figure \ref{fig:LSTMnode} shows the unidirectional implementation from \citet{gers1999learning}. Practical implementations can have small additional variations.
+Figure \ref{fig:LSTMnode} shows the unidirectional implementation from \citet{gers1999learning}. Some implementations of LSTM gates can have small variations.
 
 \begin{figure}[ht]
     \centering
@@ -205,7 +208,7 @@ This will clearly prove a problem if quick iterations are needed and makes it un
 
 Just as transformer models revolutionized transfer learning in natural language processing at large, they also have revolutionized transfer learning between languages. As \citet{DBLP:journals/corr/abs-1901-07291} showed, effective cross-lingual models can be trained and. if parallel corpora exist, the model can even utilize resources in other languages in the language model pre-training. These techniques once again greatly improved state-of-the-art performance on several tasks, this time with multilingual objectives. Most interestingly for the goal of this thesis, \citeauthor{DBLP:journals/corr/abs-1901-07291}  report state-of-the-art performance on the XNLI data, where the tasks are cross-lingual and zero-shot, i.e. learning to accomplish different tasks with only labeled data in another language than the target language \citep{DBLP:journals/corr/abs-1809-05053}.
 
-Once again, the training process is in theory not that advanced. XLM shares BERT's training goal of masked language modeling shown in figure \ref{fig:BERTmasking}, but also causal language modeling, i.e. given a set of words, predict what word will follow.\marginpar{is is set or a sequence?} 
+Once again, the training process is in theory not that advanced. XLM shares BERT's training goal of masked language modeling shown in figure \ref{fig:BERTmasking}, but also causal language modeling, i.e. given a sequence of words, predict what word will follow.
 
 The cross-lingual training is what they named \emph{translation language modeling}: Given two identical sentences in different languages, mask 15\% of tokens randomly and use the sentence in both languages to predict the missing tokens with cross-lingual connections. Figure \ref{fig:TLM} shows an example of this.
 
@@ -231,7 +234,7 @@ During training, the model will learn to translate between languages and what wo
 
 \chapter{Dataset}
 
-This chapter describes how the dataset was created and made usable for a classification problem as well as some other characteristics of the dataset that are relevant for understanding the problem of working with the data. Two distinct datasets will also be presented\marginpar{Why also?}: The first one from Ifrågasätt that is used to understand characteristics of newspaper comment data and a second one, the OffensEval competition dataset, that is used to test multilingual models.
+This chapter describes how the dataset was created and made usable for a classification problem as well as some other characteristics of the dataset that are relevant for understanding the problem of working with the data. Two distinct datasets will be presented: The first one from Ifrågasätt that is used to understand characteristics of newspaper comment data and a second one, the OffensEval competition dataset, that is used to test multilingual models.
 
 \section{The Ifrågasätt data}
 
@@ -249,13 +252,15 @@ The moderators work has so far resulted in all the published comments being plac
 
 \subsection{Generating categorical data}
 
-Of these classes, all toxic comments are in the \emph{hidden} class. Furthermore, every deleted comment has a reason for the deletion, stated in plain text. Unfortunately the reasons for deletions is separated into further categories not visible in the status of the comment. Some of these finer separated classes are not necessarily problems in themselves. Insults and general racism are separate as reasons for moderators to remove the comment, but both fit the larger class of a toxic comment. Other reasons however, such as being off-topic or posting two identical comments are crucial to separate from toxic comments. An off-topic comment on one article might be a normal comment on another article. A comment posted twice that is civil means that there exists one copy of the comment that is deleted and one that is approved that are identical in content. This is problematic for a classifier given this since it won't have the information of why one comment is deleted and the other is approved in the features of the comment that it is given.\marginpar{I found this paragraph quite confused. Maybe try to rephrase}
+Of these classes, all toxic comments are in the \emph{hidden} class. Unfortunately not all hidden comments are necessarily toxic comments. Every hidden comment has a reason for the being hidden saved in the database, stated in plain text. These reasons for deletions states what rule the comment broke that caused is to be hidden. This means that the ´´hidden'' class is divided into several subclasses. Some of these finer separated classes are not necessarily problems in themselves. Insults and general racism are separate as reasons for moderators to remove the comment, but both fit the larger class of a toxic comment. 
+
+Other reasons however, such as being off-topic or posting two identical comments are crucial to separate from toxic comments. An off-topic comment on one article might be a normal comment on another article. A comment posted twice that is civil means that there exists one copy of the comment that is deleted and one that is approved that are identical in content. These comments, while deserving to be removed from the platform, do not fit the criteria of being toxic or offensive. Due to this they are outside the scope of this thesis and therefore have to be separated from the other hidden comments that fall under the toxic subclass.
 
 The comments also aren't necessarily confined to one class. A comment can be all three of off-topic, toxic, and needlessly repeated. For the purposes of this thesis, if a comment belongs to more than one classes where one is the toxic class, it is considered a toxic class.
 
 Luckily for us, while the comments aren't strictly split into classes, the reasons for deleting comments are mostly copied and pasted from a template. Certain status messages or small variations of them are used for most comment categories. These templates are key to quickly understanding which comments are toxic or not.
 
-I classified these comments into non-toxic and toxic using this algorithm:
+I classified the comments into non-toxic and toxic using this algorithm:
 
 \begin{enumerate}
     \item Remove all comments that do not have the hidden status.
@@ -346,7 +351,7 @@ Because the data is from the same domain and have been moderated according to si
 
 \subsubsection{Descriptive statistics}
 
-The ratio of offensive and non-offensive tweets and also the sizes of the datasets vary greatly between languages. These differences can be seen in Table \ref{tab:deskriptivOffensEval}.\marginpar{You just report English and Danish. Is that intended? I was gon}
+The ratio of offensive and non-offensive tweets and also the sizes of the datasets vary greatly between languages. These differences can be seen in Table \ref{tab:deskriptivOffensEval}.
 
 \begin{table}[t]
 \centering
@@ -460,8 +465,6 @@ This same pattern of continuous improved performance cannot be found on the othe
 
 For the Ifrågasätt data it is a bit more complex. The logistic regression classifier with TF-IDF features has a worse F1-score than a naïve classifier that only predicts one class. Undersampling also gives no benefit to the TF-IDF model, most likely due to the relative simplicity of the model. Moreover, even if the more complex models do improve the score with undersampling of the majority class, they fail to reach the performance of TF-IDF model on the other datasets. 
 
-This points to some problem with the dataset. Either it is a very hard task or there is a problem with the quality of the data. The large discrepancy between  accuracy and macro average F1-score shows that the models fail to effectively learn how to discriminate between the classes.
-
 To better understand what is happening with the results,  Figures \ref{fig:tfidf},  \ref{fig:undertfidf}, \ref{fig:underBiLSTM}, and \ref{fig:underBERT}  show the confusion matrices for four of the models. The TF-IDF model performs similarly for the two classes with regards to recall, but the more complex models have issues with achieving a high recall for the offensive class. Combined with the strong class imbalance shown in Table \ref{tab:deskriptiv} and the high accuracy in Table \ref{tab:monolingual}, this means that there is a very high precision for the majority class of normal comments but a much lower precision for the minority class of offensive comments. The precision for the BERT model is in fact 99,1\% for the BERT model and the non-offensive comments while only being 8,0\% for the offensive comments.
 
 \begin{figure}[t]
@@ -558,23 +561,32 @@ English & Swedish & 0.97 & 0.52 \\
 %    \label{fig:BiLSTM}
 %\end{figure}
 
-\chapter{Discussion and analysis}
+\chapter{Discussion}
 
-\section{Cross-lingual text classification}
 
 \section{The Ifrågasätt dataset}
 
-The performance on the Ifrågasätt data is lackluster and would be considered bad for most datasets. Even if one assumes that the task of classifying the comments at Ifrågasätt are harder than the offensive tweets of the OffensEval data, the 0.37 F1-score difference is too big to be explained solely by this. The unexpected result on the cross-lingual experiment with the Ifrågasätt data and the English OffensEval data shows that having more of the Ifrågasätt comments in the training data doesn't necessarily help the performance of the model. 
+The performance on the Ifrågasätt data is lackluster and would be considered bad for most datasets. Even if one assumes that the task of classifying the comments at Ifrågasätt are harder than the offensive tweets of the OffensEval data, the 0.37 F1-score difference is too large to be explained solely by this. The unexpected result on the cross-lingual experiment with the Ifrågasätt data and the English OffensEval data shows that having more of the Ifrågasätt comments in the training data doesn't necessarily help the performance of the model. 
 More data should, with diminishing returns, almost always be useful for a machine learning model. This should be even more true when the training data that is added in the same language as the evaluation data and thus more applicable to the evaluation data than the English language data. This decrease in performance when adding the Swedish data points to some underlying issue with either the implementation or the dataset. Given that the model works as expected for the English and Danish datasets, the problem is likely to be found in the dataset. This is somewhat expected from the analysis of the inter-annotator agreement found in the dataset chapter. There are a lot of comments on the platform, but the quality of the annotations isn't high enough for the data to be utilized to it's full potential. 
 
-This doesn't mean that the classifiers are useless. The better performing bidirectional LSTM and BERT models can still be considered useful. The models do well at finding most of the non-offensive comments, but there is a minority that they have failed to learned how to distinguish from the offensive comments. But because of the high precision on the normal comments it is a working tool for sorting out and prioritizing a subset of the comments that are hateful. Since the comments on Ifrågasätt and presumably most other newspaper are eventually all read and confirmed to fit on the platform, these models provides an automatic way of finding some of the hateful comments quicker than labeling them in a random order would do. The low precision of the offensive category is still a problem, but if the BERT model would be used one can find 50\% of the hateful comments by reading less than 10\% of the comments that are published. To accomplish more it is likely that the issues with the dataset need to be addressed.
+This doesn't mean that the classifiers are useless. The better performing bidirectional LSTM and BERT models can still be considered useful. There is a high precision for the non-offensive comments, but the large difference in F1-score and accuracy means that the model has failed to learn how to effectively discriminate between the classes.  But because the models do well at finding most of the non-offensive comments it is a working tool for sorting out and prioritizing a subset of the comments that are hateful. Since the comments on Ifrågasätt and presumably most other newspaper are eventually all read and confirmed to fit on the platform, these models provides an automatic way of finding some of the hateful comments quicker than labeling them in a random order would do. For example, by prioritizing the comments classified as hateful by the BERT model one can find 50\% of the hateful comments by reading less than 10\% of the comments that are published. It is clear that the low precision is still a problem because one would need to read 
+ an average of 15 comments for every hateful comment to be found, but this is still useful to remove some comments earlier. To accomplish more it is likely that the issues with the dataset need to be addressed.
 
-The quality of the dataset mostly falls outside the scope of this thesis, but if the moderators' daily work should be better suited for the use in classifiers in the future this should be addressed. There are several possible paths to make the inter-annotator agreement higher. More stringent moderator training would make it more likely they understand the guidelines similarly. This can be implemented for example as a training dataset that a moderator has to annotate correct enough to begin work. Some sort of ``supervision'' between the moderators can be added where they, knowingly or unknowingly, label data points that someone else has labeled before to look at performance in real time to make sure that their interpretations do not shift too greatly in time. The moderators could put the comments into strict categories instead of relying on the free text moderating reason for comments, which would also remove any errors introduced by the categorization method.
+The quality of the dataset mostly falls outside the scope of this thesis, but if the moderators' daily work should be better suited for the use in classifiers in the future this should be addressed. There are several possible paths to make the inter-annotator agreement higher. More stringent moderator training would make it more likely they understand the guidelines similarly. This can be implemented for example as a training dataset that a moderator has to annotate correct enough to begin work. Some sort of ``supervision'' between the moderators can be added where they, knowingly or unknowingly, label data points that someone else has labeled before to look at performance in real time to make sure that their interpretations do not shift too greatly in time. The moderators could put the comments into strict categories instead of relying on the free text moderating reason for comments, which would also remove any errors introduced by the categorization method. 
 
-It should also be clear that the annotation task being harder is not really an assumption but also a reasonable deduction from the moderators noting that the task is harder without context. The moderators when annotating comments take things such as the context of the comment, how language evolves over time and what newspaper it is written on which is information of which the model has no concept. The models as implemented has no information about the metadata of the comment (what newspaper it is written on) or what the comment is responding to, which the annotators does. This means that even taking into account the lower inter-annotator agreement on the dataset, the classifiers should perform worse than on other toxicity datasets with equivalent inter-annotator agreement. 
+It should also be clear that the annotation task being harder is not really an assumption but also a reasonable deduction from the moderators noting that the task is harder without context. The moderators when annotating comments take things such as the context of the comment, how language evolves over time and what newspaper it is written on which is information of which the model has no concept. The models as implemented has no information about the metadata of the comment (what newspaper it is written on) or what the comment is responding to, which the annotators does. This means that even taking into account the lower inter-annotator agreement on the dataset, classifiers who do not model these things should perform worse than on other toxicity datasets with equivalent inter-annotator agreement. 
 
-A model could possibly take these things into consideration. In an experiment I tried to incorporate newspapers embeddings into the bidirectional LSTM model, but I found no difference in result from the one reported in Table \ref{tab:monolingual}. In practice, the large number of newspapers means there aren't many comments from the offensive category that are in the training set. When this is combined with the heavy undersampling that was required to make the models converge the lack of benefit is reasonably explained. Not only does the quality of the annotated comments prevent good performance, but the large class imbalance comes in again as a factor in making the classification task harder. It is hard to make a model learn from the entirety of the dataset.  It could also be possible to take into account earlier comments in the comment chain as some sort of feature, but I did not test this.
+A model could possibly take these things into consideration and some experiments to that effect were done. In an effort to model stricter moderating criteria for certain newspaper I tried to incorporate newspapers embeddings into the bidirectional LSTM model, but I found no difference in result from the one reported in Table \ref{tab:monolingual}. In practice, the large number of newspapers means there aren't many comments from the offensive category that are in the training set. When this is combined with the heavy undersampling that was required to make the models converge the lack of benefit is reasonably explained. Not only does the quality of the annotated comments prevent good performance, but the large class imbalance comes in again as a factor in making the classification task harder. The class imbalance makes it hard for a deep learning model to learn from the entirety of the dataset.  It could also be possible to take into account earlier comments in the comment chain, the text and headline of the newspaper article itself as some sort of features, but this was left for future work.
 
+\section{Cross-lingual text classification}
+
+The results for the English-Danish cross-lingual text classification shows that cross-lingual text classification is a surprisingly mature field. Offensive text classification requires a high level of understanding of language and even for humans it hard to consistently categorize texts as found in the dataset chapter. That a model can not only understand these categories somewhat well but also do it cross-lingually without target language data bodes well for implementing models for dataless languages. As can be seen in the results for the monolingual Danish models in Table \ref{tab:monolingual}, the deep learning models fail to give meaningful results with only a modest amount of data. That the cross-lingual model overcomes this problem is good news. This means that if one has a starting point of having a good dataset of offensive text in one language, this data can be of use in other languages. 
+
+This opens up a quite simple procedure for expanding the XLM-RoBERTa model into other languages. For good results in new languages annotators that can understand the new language are necessary, but they do not need to pre-annotate a large corpus because even without data in the language the model will produce useful results. As the annotators start to work on new comments that are published and recategorize those that the model classified incorrectly, a dataset begins to form that can be used to retrain the model. Without annotating a lot of comments this will quickly ramp up the performance of the model which will approach the values of a monolingual BERT model as can be seen from Table \ref{tab:crosslingual}, where a small starting set of data  made the results similar to the results of the BERT model in the English language. 
+
+This however assumes that the data that is being annotated has high inter-annotator agreement. As shown from the experiment cross-lingual experiment with the Ifrågasätt data more data isn't always better if it is of worse quality than the earlier data. I once again stress the importance of moderators internalizing the guidelines similarly for a classifier to have a high performance.
+
+Some caveats should be placed in that the experiment isn't necessarily applicable to all language pairs and many other pairings might have worse results. The XLM-RoBERTa model isn't training text sizes in different languages isn't evenly distributed and English is the language with the most training data \citep{DBLP:journals/corr/abs-1901-07291}. As English is a high-resource language in this context, reasonably it should have one of the better cross-lingual capabilities as well. Even if Danish has a lower amount of training data than English, it has more data than some other languages in the training set and is linguistically quite close to English. Both are Germanic languages with similar grammar and while the vocabularies are different they are sometimes very similar. All else equal, it should be easier to model semantic similarities in languages with recent common ancestors than those without. The results would likely have not been as good for example if the Arabic OffensEval dataset was used to complement the Danish data. For this reason, it would have been also interesting to try to complement the Danish OffensEval data with the Ifrågasätt data in Swedish. While these languages are very close linguistically, they together make up a relatively small portion of the data that was used in training for the XML-RoBERTa model. An experiment testing this would be more applicable for future use in Ifrågasätt Media AB but also tell us more about how much pre-training data is required to achieve good cross-lingual capabilities. Unfortunately, the Swedish dataset seems to be of too poor quality for any such attempts to be possible and the question is left open.
 
 
 
